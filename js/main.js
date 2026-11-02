@@ -425,6 +425,12 @@ async function main() {
   // ------------------------------------------------------------ boot
 
   new ResizeObserver(() => engine.sizeFrame()).observe($('stage'));
+  // phones: the sidebar shows one tab at a time (Scenes / Style & video)
+  document.querySelectorAll('.mobile-tabs button').forEach(b => b.addEventListener('click', () => { $('sidebar').dataset.tab = b.dataset.tab; $('sidebar').scrollTop = 0; }));
+  // lets the phone layout give vertical Reels a taller preview
+  const markAspect = () => { document.documentElement.dataset.aspect = app.project.settings.aspect; };
+  markAspect();
+  engine.on('timeline', markAspect);
   sidebar.renderSettings();
   sidebar.renderScenes();
   renderTimeline();

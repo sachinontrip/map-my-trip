@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0e14">
   <title>Map My Trip: free travel map animation maker for YouTube and Reels</title>
   <meta name="description" content="Make animated travel maps for your vlogs: flight paths on a 3D globe, road trips, train and walking routes, countries lighting up one by one, departure boards and night city lights. Free, in your browser, export to MP4.">
   <meta name="keywords" content="travel map animation, animated flight path, route map video, travel vlog map, map animation for YouTube, Instagram Reels map, 3D globe animation">
@@ -33,14 +34,18 @@
       <button id="btn-open" class="ghost" type="button">Open</button>
       <button id="btn-save" class="ghost" type="button">Save</button>
       <input type="file" id="file-open" accept=".json,application/json" hidden>
-      <button id="btn-export" class="primary" type="button">⬇ Export video</button>
     </div>
+    <button id="btn-export" class="primary" type="button">⬇ Export video</button>
   </header>
 
   <main class="layout">
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar" data-tab="scenes">
+      <div class="mobile-tabs" role="tablist">
+        <button type="button" role="tab" data-tab="scenes">🎬 Scenes</button>
+        <button type="button" role="tab" data-tab="style">🎨 Style &amp; video</button>
+      </div>
       <section class="panel" id="settings-panel"></section>
-      <section class="panel">
+      <section class="panel" id="scenes-panel">
         <div class="panel-head"><h2>Scenes</h2><span class="muted">plays top to bottom</span></div>
         <div id="scene-list"></div>
         <div class="add-row">

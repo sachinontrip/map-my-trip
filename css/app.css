@@ -18,7 +18,8 @@ button { cursor: pointer; }
 body { display: grid; grid-template-rows: 56px 1fr 72px; }
 
 /* top bar */
-.topbar { display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid var(--line); background: #0e121a; }
+.topbar { display: flex; align-items: center; gap: 8px; padding: 0 16px; border-bottom: 1px solid var(--line); background: #0e121a; }
+.topbar .top-actions { margin-left: auto; }
 .brand { display: flex; align-items: center; gap: 10px; font: 700 16px Poppins, sans-serif; letter-spacing: .2px; }
 .logo { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #111; font-size: 16px; transform: rotate(-20deg); }
 .top-actions { display: flex; gap: 8px; }
@@ -186,3 +187,68 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .keys td:first-child { white-space: nowrap; width: 45%; }
 kbd { display: inline-block; min-width: 18px; padding: 1px 6px; border-radius: 5px; border: 1px solid #3a4560; border-bottom-width: 2px; background: #161c28; font: 600 12px Inter, system-ui, sans-serif; text-align: center; }
 .top-actions .icon-btn { color: var(--text); font-size: 17px; line-height: 1; cursor: pointer; }
+
+/* ---------------------------------------------------------------- tablets & phones */
+.mobile-tabs { display: none; }
+
+@media (max-width: 1180px) {
+  .layout { grid-template-columns: 330px 1fr; }
+  .brand span:last-child { display: none; }
+  .top-actions { overflow-x: auto; scrollbar-width: none; }
+  .top-actions::-webkit-scrollbar { display: none; }
+  .top-actions > * { flex: none; }
+}
+
+/* Phones (and narrow windows): preview on top, timeline under it, settings below in two tabs. */
+@media (max-width: 860px) {
+  html, body { height: 100dvh; }
+  body { display: flex; flex-direction: column; }
+  .layout { display: contents; }
+
+  .topbar { order: 0; flex-wrap: wrap; gap: 8px 10px; padding: 8px 12px; padding-top: max(8px, env(safe-area-inset-top)); }
+  .brand span:last-child { display: inline; font-size: 15px; }
+  #btn-export { margin-left: auto; padding: 8px 12px; }
+  .topbar .top-actions { order: 2; flex-basis: 100%; margin-left: 0; gap: 6px; padding-bottom: 2px; }
+  .top-actions .ghost, .magic { padding: 7px 11px; white-space: nowrap; }
+  .top-actions .icon-btn { width: 36px; height: 34px; }
+  #btn-keys, .top-sep { display: none; }
+
+  .stage { order: 1; flex: none; height: min(calc(100vw * 0.5625 + 20px), 40dvh); }
+  [data-aspect="9:16"] .stage { height: 46dvh; }
+  [data-aspect="4:5"] .stage, [data-aspect="1:1"] .stage { height: 42dvh; }
+
+  .timeline { order: 2; flex: none; flex-wrap: wrap; gap: 6px 10px; padding: 6px 12px 8px; }
+  .timeline .play { width: 38px; height: 38px; }
+  .time { width: auto; font-size: 12px; }
+  .speed { margin-left: auto; }
+  .track-wrap { order: 5; flex-basis: 100%; height: 44px; }
+
+  .sidebar { order: 3; flex: 1; min-height: 0; border-right: 0; border-top: 1px solid var(--line); padding: 0 12px calc(24px + env(safe-area-inset-bottom)); }
+  .mobile-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; position: sticky; top: 0; z-index: 5; margin: 0 -12px; padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--line); }
+  .mobile-tabs button { padding: 9px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel-2); color: var(--muted); font-weight: 600; }
+  .sidebar[data-tab="scenes"] .mobile-tabs [data-tab="scenes"], .sidebar[data-tab="style"] .mobile-tabs [data-tab="style"] { background: #2a2310; border-color: var(--accent); color: var(--text); }
+  .sidebar[data-tab="scenes"] #settings-panel, .sidebar[data-tab="style"] #scenes-panel { display: none; }
+  .panel { border-bottom: 0; }
+
+  /* bigger touch targets; 16px text stops iPhones zooming in on every tap */
+  input[type=text], input[type=number], input[type=date], input[type=time], select, textarea, #trip-text { font-size: 16px; }
+  .card-head { padding: 10px 8px; gap: 8px; }
+  .card-tools button { width: 30px; height: 30px; }
+  .card-dur input { width: 52px; }
+  .toggle { font-size: 13px; padding: 3px 0; }
+  .switch { width: 36px; height: 20px; }
+  .switch::after { width: 16px; height: 16px; }
+  .toggle input:checked + .switch::after { transform: translateX(16px); }
+  .add-row button { padding: 10px 6px; }
+  .country-row { grid-template-columns: 34px 1fr 92px 28px; }
+
+  .modal { align-items: end; }
+  .modal-card, .wide-card { width: 100%; max-height: 90dvh; overflow-y: auto; border-radius: 18px 18px 0 0; padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 420px) {
+  .toggles { grid-template-columns: 1fr; }
+  .styles { gap: 5px; }
+  .style-chip { font-size: 10.5px; }
+  .modes { grid-template-columns: repeat(4, 1fr); }
+}
