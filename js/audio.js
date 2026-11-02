@@ -24,6 +24,7 @@ function noiseBuffer() {
 
 /** Drive an AudioParam with fn(x) for x in 0..1 across [t0, t1]. */
 function curve(param, t0, t1, fn, rate = 60) {
+  if (!(t1 - t0 > 0.001)) return; // Safari throws on empty curves
   const n = Math.max(2, Math.ceil((t1 - t0) * rate));
   const arr = new Float32Array(n);
   for (let i = 0; i < n; i++) arr[i] = fn(i / (n - 1));
@@ -165,24 +166,26 @@ export async function renderSoundtrack(timeline, settings) {
   chain(master, comp, ctx.destination);
 
   for (const c of timeline.scenes) {
-    if (settings.soundFx !== false && c.tt > 0.3) whoosh(ctx, master, c.t0, c.tt, 0.18);
-    if (c.s.type === 'travel') {
-      if (c.intro && settings.soundFx !== false) boardSound(ctx, master, c);
-      if (c.boardOnly) continue;
-      if (settings.soundVehicle !== false) vehicleSound(ctx, master, c);
-      if (settings.soundFx !== false && cloudsOn(c.s) && (c.s.camera || 'cinematic') === 'cinematic') {
-        // airy rush while passing through the clouds on take-off and landing
-        const at = u => c.f1 + u * (c.m2 - c.f1);
-        whoosh(ctx, master, at(c.pa - 0.02), at(c.pa + 0.13) - at(c.pa - 0.02), 0.14);
-        whoosh(ctx, master, at(c.pb - 0.15), at(c.pb) - at(c.pb - 0.15), 0.12);
+    try {
+      if (settings.soundFx !== false && c.tt > 0.3) whoosh(ctx, master, c.t0, c.tt, 0.18);
+      if (c.s.type === 'travel') {
+        if (c.intro && settings.soundFx !== false) boardSound(ctx, master, c);
+        if (c.boardOnly) continue;
+        if (settings.soundVehicle !== false) vehicleSound(ctx, master, c);
+        if (settings.soundFx !== false && cloudsOn(c.s) && (c.s.camera || 'cinematic') === 'cinematic') {
+          // airy rush while passing through the clouds on take-off and landing
+          const at = u => c.f1 + u * (c.m2 - c.f1);
+          whoosh(ctx, master, at(c.pa - 0.02), at(c.pa + 0.13) - at(c.pa - 0.02), 0.14);
+          whoosh(ctx, master, at(c.pb - 0.15), at(c.pb) - at(c.pb - 0.15), 0.12);
+        }
+        if (settings.soundTicks !== false && (settings.distanceTag !== false || settings.showDistance) && c.path.total > 0.05) counterTicks(ctx, master, c, settings.units);
+      } else if (c.s.type === 'highlight' && settings.soundFx !== false) {
+        for (const it of c.items) blip(ctx, master, c.t1 + it.at + 0.1, { freq: 900, to: 280, type: 'sine', gain: 0.35, decay: 0.14 });
+      } else if (c.s.type === 'spotlight' && settings.soundFx !== false) {
+        const land = c.t1 + 0.12 * (c.m2 - c.t1);
+        blip(ctx, master, land, { freq: 170, to: 55, type: 'sine', gain: 0.5, decay: 0.22 });
       }
-      if (settings.soundTicks !== false && (settings.distanceTag !== false || settings.showDistance) && c.path.total > 0.05) counterTicks(ctx, master, c, settings.units);
-    } else if (c.s.type === 'highlight' && settings.soundFx !== false) {
-      for (const it of c.items) blip(ctx, master, c.t1 + it.at + 0.1, { freq: 900, to: 280, type: 'sine', gain: 0.35, decay: 0.14 });
-    } else if (c.s.type === 'spotlight' && settings.soundFx !== false) {
-      const land = c.t1 + 0.12 * (c.m2 - c.t1);
-      blip(ctx, master, land, { freq: 170, to: 55, type: 'sine', gain: 0.5, decay: 0.22 });
-    }
+    } catch (err) { console.warn('sound effect skipped', err); }
   }
   const buf = await ctx.startRendering();
   // trim the safety tail so audio and video are exactly the same length

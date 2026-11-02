@@ -5,7 +5,7 @@ import { sampleProject, newScene, defaultSettings } from './project.js';
 import { fetchRoute } from './services.js';
 import { exportVideo, canExport } from './exporter.js';
 import { MODES } from './icons.js';
-import { renderSoundtrack, SR } from './audio.js';
+import { renderSoundtrack } from './audio.js';
 import { packMedia, unpackMedia } from './media.js';
 import { buildTrip, TRIP_EXAMPLES } from './prompt.js';
 
@@ -217,13 +217,51 @@ async function main() {
     }
     return sound.buf;
   }
-  function stopSound() { try { sound.src?.stop(); } catch { /* not started */ } sound.src = null; }
+  function stopSound() { try { sound.src?.stop(); } catch { /* not started */ } sound.src = null; silentEl?.pause(); }
+
+  // Phones only play web audio after a tap "unlocks" it, and iPhones mute web audio with the
+  // ringer/silent switch unless the page is marked as media playback.
+  let silentEl = null;
+  function unlockAudio() {
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* older Safari */ }
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    sound.ctx ||= new Ctx();
+    const resumed = sound.ctx.state === 'running' ? Promise.resolve() : sound.ctx.resume().catch(() => {});
+    if (!sound.unlocked) {
+      sound.unlocked = true;
+      const s = sound.ctx.createBufferSource();
+      s.buffer = sound.ctx.createBuffer(1, 1, sound.ctx.sampleRate);
+      s.connect(sound.ctx.destination); s.start(0);
+      // older iPhones (no audioSession API): a silent <audio> playing alongside switches the page to media playback
+      const iOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+      if (!navigator.audioSession && iOS) {
+        silentEl = new Audio(silentWav());
+        silentEl.loop = true; silentEl.setAttribute('playsinline', '');
+      }
+    }
+    return resumed;
+  }
+  function silentWav() {
+    const n = 4000, b = new DataView(new ArrayBuffer(44 + n));
+    [[0, 'RIFF'], [8, 'WAVE'], [12, 'fmt '], [36, 'data']].forEach(([o, t]) => [...t].forEach((c, i) => b.setUint8(o + i, c.charCodeAt(0))));
+    b.setUint32(4, 36 + n, true); b.setUint32(16, 16, true); b.setUint16(20, 1, true); b.setUint16(22, 1, true);
+    b.setUint32(24, 8000, true); b.setUint32(28, 8000, true); b.setUint16(32, 1, true); b.setUint16(34, 8, true); b.setUint32(40, n, true);
+    for (let i = 0; i < n; i++) b.setUint8(44 + i, 128);
+    return URL.createObjectURL(new Blob([b], { type: 'audio/wav' }));
+  }
+  ['pointerdown', 'touchend', 'keydown'].forEach(ev => document.addEventListener(ev, () => { if (app.project.settings.sound) unlockAudio(); }, { capture: true, passive: true }));
+  // coming back to the tab (or after a phone call) the context can be suspended / "interrupted"
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && app.playing && sound.ctx && sound.ctx.state !== 'running') sound.ctx.resume().catch(() => {}); });
 
   let last = 0, raf = 0;
   function tick(now) {
     if (!app.playing) return;
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
-    let t = sound.src ? sound.tStart + (sound.ctx.currentTime - sound.ctxStart) * speed : engine.t + dt * speed;
+    // the sound is the clock only while it is really running; otherwise keep time ourselves so playback never freezes
+    const audioClock = sound.src && sound.ctx.state === 'running';
+    if (sound.src && !audioClock) { sound.tStart = engine.t + dt * speed; sound.ctxStart = sound.ctx.currentTime; }
+    let t = audioClock ? sound.tStart + (sound.ctx.currentTime - sound.ctxStart) * speed : engine.t + dt * speed;
     if (t >= engine.timeline.total) { t = engine.timeline.total; engine.renderAt(t); pause(); return; }
     engine.renderAt(t);
     raf = requestAnimationFrame(tick);
@@ -232,11 +270,12 @@ async function main() {
     if (engine.t >= engine.timeline.total - 0.05) engine.renderAt(0);
     app.playing = engine.playing = true; $('btn-play').textContent = '❚❚'; $('btn-play').classList.add('on');
     if (app.project.settings.sound) {
-      sound.ctx ||= new AudioContext({ sampleRate: SR });
-      sound.ctx.resume();
+      const resumed = unlockAudio(); // still inside the tap, so phones allow it
+      silentEl?.play().catch(() => {});
       const buf = await getSoundtrack().catch(err => { console.warn('sound failed', err); return null; });
+      await resumed;
       if (!app.playing) return;
-      if (buf) {
+      if (buf && sound.ctx) {
         stopSound();
         sound.src = sound.ctx.createBufferSource();
         sound.src.buffer = buf;
@@ -368,6 +407,9 @@ async function main() {
     $('ex-summary').textContent = `${OW}×${OH} · ${app.project.settings.fps} fps · ${engine.timeline.total.toFixed(1)}s · MP4 (H.264)${app.project.settings.sound ? ' + sound' : ''}`;
     $('ex-progress').hidden = true; $('ex-done').hidden = true; $('ex-start').hidden = false; $('ex-error').textContent = '';
     if (!canExport()) $('ex-error').textContent = 'Video export needs Chrome, Edge or Safari 17+.';
+    else if (app.project.settings.sound && typeof AudioEncoder === 'undefined') {
+      $('ex-error').textContent = "This browser can't put sound into the MP4 (the video will be silent). For sound, export on a laptop with Chrome, or pick Transparent PNG, which saves a separate sound.wav.";
+    }
     modal.hidden = false;
   };
   $('ex-close').onclick = () => { exportCtrl?.abort(); modal.hidden = true; };
@@ -437,7 +479,7 @@ async function main() {
   engine.renderAt(0);
   ensureAllRoutes();
   $('loading').remove();
-  window.tripMap = { app, engine }; // handy for debugging in the console
+  window.tripMap = { app, engine, sound }; // handy for debugging in the console
 }
 
 main().catch(err => {
