@@ -1,0 +1,46 @@
+MAP MY TRIP: QUICK START FOR WINDOWS
+=====================================
+
+ONE-TIME SETUP (5 minutes)
+1. Unzip this folder somewhere easy, e.g. Desktop\Map My Trip.
+   (Right-click the zip > Extract All. Don't run it from inside the zip.)
+2. Install Node.js (free): https://nodejs.org > download the "LTS" version > Next, Next, Install.
+   This is only needed once.
+
+EVERY TIME
+1. Double-click "Start Map My Trip (Windows).bat".
+   - If Windows shows "Windows protected your PC": click "More info" > "Run anyway".
+2. The app opens in your browser at http://localhost:5199 (Chrome or Edge).
+3. Keep the black window open while you work. Close it when you're done.
+
+MAKING A VIDEO
+- Left side: pick the map look, format (16:9 YouTube / 9:16 Reel) and quality.
+- Add scenes:  Travel (from > to, flight/taxi/train/walk)
+               Countries (colour countries, Indian states or cities one by one)
+               Spotlight (3D close-up of a landmark)
+- Press Play (or Space) to preview with sound.
+- "Export video" > choose a background:
+     Map          = normal MP4
+     Green screen = for CapCut / VN (use chroma key)
+     Transparent  = PNG frames for Premiere / Resolve
+  Keep the browser tab visible while it renders (a 45-second video takes a few minutes).
+
+HANDY EXTRAS
+- "Type your trip" (top bar): write e.g. "Delhi to Cairo by flight, taxi to the pyramids,
+  show Egypt's neighbours" and the scenes are made for you. English or Hinglish.
+- Flights: "Time of day" (Day / Morning / Sunset / Night with city lights),
+  "Fly through clouds", "Departure board intro", and "Flight time" (counts up next to the km).
+- Each scene: change its length in the box next to its name (e.g. 8.0s).
+- Photo at a stop: add it in the scene; "Photo stays on screen" sets how long it stays.
+- Undo / redo: Ctrl+Z / Ctrl+Shift+Z.  Drag a scene by its number to move it.
+- Preview speed 0.5x - 2x next to the time.  Press ? for all keyboard shortcuts.
+
+BOOKMARK
+- You can bookmark http://localhost:5199 - but it only opens while the black
+  window is running. So: double-click the .bat first, then use the bookmark.
+
+SHARING PROJECTS
+- "Save" downloads a .mapmytrip.json file (photos/clips included).
+- Send that file back and forth; "Open" loads it on any computer.
+
+NEEDS INTERNET (the maps load online). Use Chrome or Edge, not Firefox.

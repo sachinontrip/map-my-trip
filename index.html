@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Map My Trip: free travel map animation maker for YouTube and Reels</title>
+  <meta name="description" content="Make animated travel maps for your vlogs: flight paths on a 3D globe, road trips, train and walking routes, countries lighting up one by one, departure boards and night city lights. Free, in your browser, export to MP4.">
+  <meta name="keywords" content="travel map animation, animated flight path, route map video, travel vlog map, map animation for YouTube, Instagram Reels map, 3D globe animation">
+  <meta property="og:title" content="Map My Trip: animated travel maps for YouTube and Reels">
+  <meta property="og:description" content="Flights, road trips, country highlights and 3D city flyovers. Free, open source, exports MP4.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://sachinontrip.github.io/map-my-trip/docs/social-preview.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="vendor/maplibre-gl.css">
+  <link rel="stylesheet" href="css/app.css">
+  <script src="vendor/maplibre-gl.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo">✈</span><span>Map My Trip</span></div>
+    <div class="top-actions">
+      <button id="btn-trip" class="magic" type="button" title="Describe your trip and the scenes are made for you">✨ Type your trip</button>
+      <span class="top-sep"></span>
+      <button id="btn-undo" class="icon-btn" type="button" title="Undo (⌘Z)" disabled>↶</button>
+      <button id="btn-redo" class="icon-btn" type="button" title="Redo (⌘⇧Z)" disabled>↷</button>
+      <button id="btn-keys" class="icon-btn" type="button" title="Keyboard shortcuts (?)">⌨</button>
+      <span class="top-sep"></span>
+      <button id="btn-demo" class="ghost" type="button">Demo trip</button>
+      <button id="btn-new" class="ghost" type="button">New</button>
+      <button id="btn-open" class="ghost" type="button">Open</button>
+      <button id="btn-save" class="ghost" type="button">Save</button>
+      <input type="file" id="file-open" accept=".json,application/json" hidden>
+      <button id="btn-export" class="primary" type="button">⬇ Export video</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <section class="panel" id="settings-panel"></section>
+      <section class="panel">
+        <div class="panel-head"><h2>Scenes</h2><span class="muted">plays top to bottom</span></div>
+        <div id="scene-list"></div>
+        <div class="add-row">
+          <button type="button" data-add="travel">🧭 Travel</button>
+          <button type="button" data-add="highlight">🎨 Countries</button>
+          <button type="button" data-add="spotlight">📍 Spotlight</button>
+        </div>
+      </section>
+    </aside>
+
+    <section class="stage" id="stage">
+      <div class="frame" id="frame">
+        <canvas id="stars"></canvas>
+        <div id="map"></div>
+        <canvas id="overlay"></canvas>
+      </div>
+      <div id="loading" class="loading">Loading map…</div>
+    </section>
+  </main>
+
+  <footer class="timeline">
+    <button id="btn-restart" class="icon-btn" type="button" title="Back to start">⏮</button>
+    <button id="btn-play" class="play" type="button" title="Play / pause (space)">▶</button>
+    <div class="time" id="time">0:00.0 / 0:00.0</div>
+    <select id="speed" class="speed" title="Preview speed ([ and ] keys) — export is always normal speed">
+      <option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option>
+    </select>
+    <div class="track-wrap">
+      <div class="blocks" id="blocks"></div>
+      <input type="range" id="scrub" min="0" max="1000" value="0" step="1" aria-label="Timeline">
+    </div>
+  </footer>
+
+  <div class="modal" id="export-modal" hidden>
+    <div class="modal-card">
+      <div class="modal-head"><h3>Export video</h3><button id="ex-close" class="icon-btn" type="button" title="Close">✕</button></div>
+      <p id="ex-summary" class="muted"></p>
+      <label class="field"><span class="field-label">Background</span>
+        <select id="ex-bg">
+          <option value="map">Map — normal MP4 video</option>
+          <option value="green">Green screen MP4 — for CapCut / VN / InShot (chroma key)</option>
+          <option value="png">Transparent PNG sequence — for Premiere / Resolve / Final Cut</option>
+        </select>
+      </label>
+      <p class="hint" id="ex-bg-hint"></p>
+      <p class="hint">Every frame waits for the map to fully load, so the video stays smooth and sharp even if preview stutters. Keep this tab open while it renders.</p>
+      <button id="ex-start" class="primary wide" type="button">Start export</button>
+      <div id="ex-progress" hidden>
+        <div class="bar"><div id="ex-bar"></div></div>
+        <div id="ex-label" class="muted">Preparing…</div>
+      </div>
+      <div id="ex-done" hidden>
+        <p>✅ Done! <span id="ex-size" class="muted"></span></p>
+        <a id="ex-download" class="primary wide btn-link">Download MP4 again</a>
+      </div>
+      <p id="ex-error" class="error"></p>
+    </div>
+  </div>
+
+  <div class="modal" id="trip-modal" hidden>
+    <div class="modal-card wide-card">
+      <div class="modal-head"><h3>✨ Type your trip</h3><button id="trip-close" class="icon-btn" type="button" title="Close">✕</button></div>
+      <p class="muted">Write your trip in plain words — English or Hinglish. Each part becomes a scene.</p>
+      <textarea id="trip-text" rows="5" placeholder="Delhi to Cairo by flight, taxi to the pyramids, show Egypt's neighbours"></textarea>
+      <div class="trip-examples" id="trip-examples"></div>
+      <label class="toggle"><input type="checkbox" id="trip-append"><span class="switch"></span><span>Add after my current scenes (instead of replacing them)</span></label>
+      <details class="trip-help"><summary>What can I write?</summary>
+        <ul>
+          <li><b>Travel:</b> "Delhi to Cairo by flight", "taxi to the pyramids", "Mumbai se Goa train", "walk to India Gate"</li>
+          <li><b>Countries:</b> "show Egypt's neighbours", "highlight Nepal, Bhutan and Bangladesh", "Kerala aur Goa dikhao"</li>
+          <li><b>Close-up of a place:</b> "visit the Taj Mahal", "explore Eiffel Tower"</li>
+          <li><b>Days:</b> "Day 2: Cairo to Luxor by train"</li>
+          <li>Separate parts with commas, full stops, new lines, "then" or "phir".</li>
+        </ul>
+      </details>
+      <button id="trip-go" class="primary wide" type="button">Create scenes</button>
+      <div id="trip-log" class="trip-log"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="keys-modal" hidden>
+    <div class="modal-card">
+      <div class="modal-head"><h3>⌨ Keyboard shortcuts</h3><button id="keys-close" class="icon-btn" type="button" title="Close">✕</button></div>
+      <table class="keys">
+        <tr><td><kbd>Space</kbd></td><td>Play / pause</td></tr>
+        <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Back / forward 1 second (with <kbd>Shift</kbd>: 5 s)</td></tr>
+        <tr><td><kbd>Home</kbd></td><td>Back to start</td></tr>
+        <tr><td><kbd>[</kbd> <kbd>]</kbd></td><td>Preview slower / faster</td></tr>
+        <tr><td><kbd>⌘/Ctrl</kbd> <kbd>Z</kbd></td><td>Undo</td></tr>
+        <tr><td><kbd>⌘/Ctrl</kbd> <kbd>Shift</kbd> <kbd>Z</kbd></td><td>Redo</td></tr>
+        <tr><td><kbd>⌘/Ctrl</kbd> <kbd>S</kbd></td><td>Save project file</td></tr>
+        <tr><td><kbd>⌘/Ctrl</kbd> <kbd>E</kbd></td><td>Export video</td></tr>
+        <tr><td><kbd>T</kbd></td><td>Type your trip</td></tr>
+        <tr><td><kbd>?</kbd></td><td>This list</td></tr>
+      </table>
+      <p class="hint">Drag a scene by its number to move it.</p>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

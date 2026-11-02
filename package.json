@@ -1,0 +1,30 @@
+{
+  "name": "map-my-trip",
+  "version": "1.0.0",
+  "description": "Free travel map animation maker for YouTube & Reels: animated flight routes, road trips, country highlights and 3D city flyovers, exported to MP4 in your browser.",
+  "scripts": {
+    "start": "node serve.cjs"
+  },
+  "keywords": [
+    "travel-map",
+    "map-animation",
+    "flight-path-animation",
+    "route-animation",
+    "travel-vlog",
+    "youtube",
+    "instagram-reels",
+    "maplibre",
+    "3d-map",
+    "animated-map",
+    "video-maker",
+    "trip-map"
+  ],
+  "author": "Sachin (@sachinontrip)",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "maplibre-gl": "^5.24.0",
+    "mp4-muxer": "^5.2.2",
+    "three": "^0.170.0"
+  }
+}
